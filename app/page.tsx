@@ -82,6 +82,7 @@ export default function Home() {
         if (!user) {
           window.location.href =
             "/login";
+
           return;
         }
 
@@ -92,6 +93,7 @@ export default function Home() {
           "User";
 
         setUserName(name);
+
         setUserEmail(
           user.email || ""
         );
@@ -218,6 +220,7 @@ export default function Home() {
         setErrorMessage(
           "Document name cannot be empty."
         );
+
         return;
       }
 
@@ -552,6 +555,7 @@ export default function Home() {
                           setShowCreateForm(
                             false
                           );
+
                           setErrorMessage(
                             ""
                           );
@@ -572,7 +576,7 @@ export default function Home() {
             key={roomKey}
             url={
               process.env
-                .NEXT_PUBLIC_COLLAB_URL
+                .NEXT_PUBLIC_COLLAB_URL!
             }
           >
             <HocuspocusRoom

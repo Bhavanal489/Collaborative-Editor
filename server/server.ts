@@ -29,8 +29,8 @@ if (
 
 function createSupabaseClient(token: string) {
   return createClient(
-    supabaseUrl,
-    supabasePublishableKey,
+    supabaseUrl!,
+    supabasePublishableKey!,
     {
       auth: {
         autoRefreshToken: false,
@@ -46,8 +46,8 @@ function createSupabaseClient(token: string) {
 }
 
 const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseSecretKey,
+  supabaseUrl!,
+  supabaseSecretKey!,
   {
     auth: {
       autoRefreshToken: false,

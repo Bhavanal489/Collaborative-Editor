@@ -158,8 +158,7 @@ export default function Editor({
     connectionStatus === "connecting";
 
   const isOffline =
-    connectionStatus === "disconnected" ||
-    connectionStatus === "offline";
+    connectionStatus === "disconnected";
 
   return (
     <div className="editor-container">
