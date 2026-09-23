@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Real-Time Collaborative Workspace
 
-## Getting Started
+A full-stack real-time collaborative document editor where multiple users can edit the same document simultaneously, with authentication, document sharing, role-based access control, offline persistence, and live collaboration.
 
-First, run the development server:
+## Live Application
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+https://collaborative-editor.vercel.app
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## GitHub Repository
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+https://github.com/BhavanaL489/Collaborative-Editor
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## Features
 
-To learn more about Next.js, take a look at the following resources:
+- Real-time collaborative document editing
+- Multiple users editing the same document simultaneously
+- Live collaborator presence and cursors
+- User-specific cursor colors
+- User authentication
+- Email/password authentication
+- Google OAuth authentication
+- Create, rename, and delete documents
+- Multiple independent document rooms
+- Share documents with other users
+- Editor and Viewer roles
+- Server-side Viewer permission enforcement
+- Search documents
+- Shareable document links
+- Offline document persistence
+- Automatic reconnection after connection loss
+- Connection status indicator
+- Local IndexedDB persistence
+- PostgreSQL document and user data storage
+- Production deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+                         ┌─────────────────────────┐
+                         │        Browser          │
+                         │                         │
+                         │  Next.js + Tiptap       │
+                         │  Yjs + IndexedDB        │
+                         └────────────┬────────────┘
+                                      │
+                         HTTPS        │        WSS
+                                      │
+                    ┌─────────────────┴─────────────────┐
+                    │                                   │
+                    ▼                                   ▼
+          ┌──────────────────┐                ┌──────────────────┐
+          │      Vercel      │                │      Render      │
+          │                  │                │                  │
+          │ Next.js Frontend │                │   Hocuspocus     │
+          │                  │                │ WebSocket Server │
+          └────────┬─────────┘                └────────┬─────────┘
+                   │                                   │
+                   │                                   │
+                   └──────────────┬────────────────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │     Supabase     │
+                         │                  │
+                         │ Authentication   │
+                         │ PostgreSQL       │
+                         │ Documents        │
+                         │ Members          │
+                         │ Profiles         │
+                         └──────────────────┘
