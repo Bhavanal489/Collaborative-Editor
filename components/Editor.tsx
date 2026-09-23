@@ -1,18 +1,30 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  useEditor,
+  EditorContent,
+} from "@tiptap/react";
+
 import StarterKit from "@tiptap/starter-kit";
 import Collaboration from "@tiptap/extension-collaboration";
 import CollaborationCaret from "@tiptap/extension-collaboration-caret";
+
 import {
   useHocuspocusAwareness,
   useHocuspocusConnectionStatus,
   useHocuspocusProvider,
 } from "@hocuspocus/provider-react";
+
 import { IndexeddbPersistence } from "y-indexeddb";
 
 import Toolbar from "./Toolbar";
+import ShareDialog from "./ShareDialog";
 
 const USER_COLORS = [
   "#7c3aed",
@@ -27,10 +39,13 @@ function getUserColor(name: string) {
   let hash = 0;
 
   for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    hash =
+      name.charCodeAt(i) +
+      ((hash << 5) - hash);
   }
 
-  const index = Math.abs(hash) % USER_COLORS.length;
+  const index =
+    Math.abs(hash) % USER_COLORS.length;
 
   return USER_COLORS[index];
 }
@@ -38,32 +53,48 @@ function getUserColor(name: string) {
 type EditorProps = {
   userName: string;
   documentName: string;
+  documentId: string;
+  role: "owner" | "editor" | "viewer";
 };
 
 export default function Editor({
   userName,
   documentName,
+  documentId,
+  role,
 }: EditorProps) {
-  // Hocuspocus provider
-  const provider = useHocuspocusProvider();
+  const provider =
+    useHocuspocusProvider();
 
-  // Connected users
-  const users = useHocuspocusAwareness();
+  const users =
+    useHocuspocusAwareness();
 
-  // WebSocket connection status
-  const connectionStatus = useHocuspocusConnectionStatus();
+  const connectionStatus =
+    useHocuspocusConnectionStatus();
 
-  // User color
-  const userColor = getUserColor(userName);
+  const [showShare, setShowShare] =
+    useState(false);
 
-  // IndexedDB persistence
-  const persistenceRef = useRef<IndexeddbPersistence | null>(null);
+  const userColor =
+    getUserColor(userName);
+
+  const isViewer =
+    role === "viewer";
+
+  const canShare =
+    role === "owner";
+
+  const persistenceRef =
+    useRef<IndexeddbPersistence | null>(
+      null
+    );
 
   if (!persistenceRef.current) {
-    persistenceRef.current = new IndexeddbPersistence(
-      documentName,
-      provider.document
-    );
+    persistenceRef.current =
+      new IndexeddbPersistence(
+        documentName,
+        provider.document
+      );
   }
 
   useEffect(() => {
@@ -73,8 +104,9 @@ export default function Editor({
     };
   }, []);
 
-  // Tiptap editor
   const editor = useEditor({
+    editable: !isViewer,
+
     extensions: [
       StarterKit.configure({
         undoRedo: false,
@@ -86,6 +118,7 @@ export default function Editor({
 
       CollaborationCaret.configure({
         provider,
+
         user: {
           name: userName,
           color: userColor,
@@ -96,53 +129,112 @@ export default function Editor({
     immediatelyRender: false,
   });
 
-  // Update user information
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) {
+      return;
+    }
 
     editor.commands.updateUser({
       name: userName,
       color: userColor,
     });
-  }, [editor, userName, userColor]);
+
+    editor.setEditable(!isViewer);
+  }, [
+    editor,
+    userName,
+    userColor,
+    isViewer,
+  ]);
 
   if (!editor) {
     return null;
   }
 
+  const isConnected =
+    connectionStatus === "connected";
+
+  const isConnecting =
+    connectionStatus === "connecting";
+
+  const isOffline =
+    connectionStatus === "disconnected" ||
+    connectionStatus === "offline";
+
   return (
     <div className="editor-container">
       <div className="workspace-header">
         <div>
-          <strong>Document</strong>
+          <strong>
+            Document
+          </strong>
 
           <span className="document-name">
             {documentName}
           </span>
+
+          <span className="document-role">
+            {role}
+          </span>
         </div>
 
-        <div className="workspace-status">
-          <span
-            className={`status-dot ${
-              connectionStatus === "connected"
-                ? "online"
-                : connectionStatus === "connecting"
-                  ? "connecting"
-                  : "offline"
-            }`}
-          />
+        <div className="workspace-header-actions">
+          <div className="workspace-status">
+            <span
+              className={`status-dot ${
+                isConnected
+                  ? "online"
+                  : isConnecting
+                    ? "connecting"
+                    : "offline"
+              }`}
+            />
 
-          {connectionStatus === "connected"
-            ? "Online"
-            : connectionStatus === "connecting"
-              ? "Connecting..."
-              : "Offline"}
+            {isConnected
+              ? "Online"
+              : isConnecting
+                ? "Connecting..."
+                : "Offline"}
+          </div>
+
+          {canShare && (
+            <button
+              className="share-button"
+              onClick={() =>
+                setShowShare(true)
+              }
+            >
+              Share
+            </button>
+          )}
         </div>
       </div>
 
+      {isConnecting && (
+        <div className="connection-notice connecting-notice">
+          Connecting to collaboration server...
+        </div>
+      )}
+
+      {isOffline && (
+        <div className="connection-notice offline-notice">
+          Connection lost. Trying to reconnect...
+          Your local changes are saved.
+        </div>
+      )}
+
+      {isViewer && (
+        <div className="viewer-notice">
+          You have viewer access. This
+          document is read-only.
+        </div>
+      )}
+
       <div className="collaborators">
         <div>
-          <strong>People in this document</strong>
+          <strong>
+            People in this document
+          </strong>
 
           <span className="online-count">
             {users.length} online
@@ -151,15 +243,21 @@ export default function Editor({
 
         <div className="user-list">
           {users.map((user) => {
-            const userInfo = user.user as
-              | {
-                  name?: string;
-                  color?: string;
-                }
-              | undefined;
+            const userInfo =
+              user.user as
+                | {
+                    name?: string;
+                    color?: string;
+                  }
+                | undefined;
 
-            const name = userInfo?.name || "Unknown user";
-            const color = userInfo?.color || "#7c3aed";
+            const name =
+              userInfo?.name ||
+              "Unknown user";
+
+            const color =
+              userInfo?.color ||
+              "#7c3aed";
 
             return (
               <div
@@ -169,10 +267,12 @@ export default function Editor({
                 <span
                   className="user-avatar"
                   style={{
-                    backgroundColor: color,
+                    backgroundColor:
+                      color,
                   }}
                 >
-                  {name[0]?.toUpperCase() || "U"}
+                  {name[0]?.toUpperCase() ||
+                    "U"}
                 </span>
 
                 <span className="user-name">
@@ -184,9 +284,23 @@ export default function Editor({
         </div>
       </div>
 
-      <Toolbar editor={editor} />
+      {!isViewer && (
+        <Toolbar editor={editor} />
+      )}
 
-      <EditorContent editor={editor} />
+      <EditorContent
+        editor={editor}
+      />
+
+      {showShare && (
+        <ShareDialog
+          documentId={documentId}
+          documentName={documentName}
+          onClose={() =>
+            setShowShare(false)
+          }
+        />
+      )}
     </div>
   );
 }
