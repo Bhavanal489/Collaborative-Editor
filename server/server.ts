@@ -94,7 +94,8 @@ type ConnectionConfig = {
 };
 
 const server = new Server<UserContext>({
-  port: 1234,
+  port:
+    Number(process.env.PORT) || 1234,
 
   async onAuthenticate(data) {
     const {
@@ -364,5 +365,5 @@ const server = new Server<UserContext>({
 server.listen();
 
 console.log(
-  "Hocuspocus server running on ws://127.0.0.1:1234"
+  "Hocuspocus server running on configured port"
 );
